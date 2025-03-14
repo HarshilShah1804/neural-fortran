@@ -65,9 +65,9 @@ contains
     class(dense_layer), intent(in), target :: self
     real, allocatable :: params(:)
 
-    real, pointer :: w_(:) => null()
+    real, allocatable :: w_(:)
 
-    w_(1:size(self % weights)) => self % weights
+    w_ = reshape(self % weights, [size(self % weights)])
 
     params = [ &
       w_, &
@@ -81,9 +81,9 @@ contains
     class(dense_layer), intent(in), target :: self
     real, allocatable :: gradients(:)
 
-    real, pointer :: dw_(:) => null()
+    real, allocatable :: dw_(:)
 
-    dw_(1:size(self % dw)) => self % dw
+    dw_ = reshape(self % dw, [size(self % dw)])
 
     gradients = [ &
       dw_, &
@@ -97,7 +97,7 @@ contains
     class(dense_layer), intent(in out) :: self
     real, intent(in), target :: params(:)
 
-    real, pointer :: p_(:,:) => null()
+    real, allocatable :: p_(:,:) 
 
     ! check if the number of parameters is correct
     if (size(params) /= self % get_num_params()) then
@@ -106,8 +106,7 @@ contains
 
     associate(n => self % input_size * self % output_size)
       ! reshape the weights
-      p_(1:self % input_size, 1:self % output_size) => params(1 : n)
-      self % weights = p_
+      self % weights = reshape(params(1:n), [self % input_size, self % output_size])
 
       ! reshape the biases
       self % biases = params(n + 1 : n + self % output_size)

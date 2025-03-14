@@ -193,14 +193,11 @@ contains
     class(conv2d_layer), intent(in), target :: self
     real, allocatable :: params(:)
 
-    real, pointer :: w_(:) => null()
+    real, allocatable :: w_(:) 
 
-    w_(1:size(self % kernel)) => self % kernel
+    w_ = reshape(self % kernel, [size(self % kernel)])
 
-    params = [ &
-      w_, &
-      self % biases &
-    ]
+    params = [ w_, self % biases ]
 
   end function get_params
 
@@ -209,9 +206,9 @@ contains
     class(conv2d_layer), intent(in), target :: self
     real, allocatable :: gradients(:)
 
-    real, pointer :: dw_(:) => null()
+    real, allocatable :: dw_(:) 
 
-    dw_(1:size(self % dw)) => self % dw
+    dw_ = reshape(self % dw, [size(self % dw)])
 
     gradients = [ &
       dw_, &
