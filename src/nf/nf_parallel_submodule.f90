@@ -1,7 +1,7 @@
-#ifndef PARALLEL
-#define num_images() 1
-#define this_image() 1
-#endif
+! #ifndef PARALLEL
+! #define num_images() 1
+! #define this_image() 1
+! #endif
 
 submodule(nf_parallel) nf_parallel_submodule
   implicit none

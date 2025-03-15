@@ -443,10 +443,10 @@ contains
         call random_number(pos)
         batch_start = int(pos * (dataset_size - batch_size + 1)) + 1
 
-#ifdef PARALLEL
-        ! FIXME shuffle in a way that doesn't require co_broadcast
-        call co_broadcast(batch_start, 1)
-#endif
+! #ifdef PARALLEL
+!         ! FIXME shuffle in a way that doesn't require co_broadcast
+!         call co_broadcast(batch_start, 1)
+! #endif
 
         ! Distribute the batch in nearly equal pieces to all images
         indices = tile_indices(batch_size)
@@ -496,19 +496,19 @@ contains
       batch_size_ = 1
     end if
 
-#ifdef PARALLEL
-    ! Sum weight and bias gradients across images, if any
-    do n = 2, size(self % layers)
-      select type(this_layer => self % layers(n) % p)
-        type is(dense_layer)
-          call co_sum(this_layer % dw)
-          call co_sum(this_layer % db)
-        type is(conv2d_layer)
-          call co_sum(this_layer % dw)
-          call co_sum(this_layer % db)
-      end select
-    end do
-#endif
+! #ifdef PARALLEL
+!     ! Sum weight and bias gradients across images, if any
+!     do n = 2, size(self % layers)
+!       select type(this_layer => self % layers(n) % p)
+!         type is(dense_layer)
+!           call co_sum(this_layer % dw)
+!           call co_sum(this_layer % db)
+!         type is(conv2d_layer)
+!           call co_sum(this_layer % dw)
+!           call co_sum(this_layer % db)
+!       end select
+!     end do
+! #endif
 
     params = self % get_params()
     call self % optimizer % minimize(params, self % get_gradients() / batch_size_)

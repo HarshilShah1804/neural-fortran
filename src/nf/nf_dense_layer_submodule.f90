@@ -128,9 +128,9 @@ contains
     self % weights = self % weights / self % input_size
 
     ! Broadcast weights to all other images, if any.
-#ifdef PARALLEL
-    call co_broadcast(self % weights, 1)
-#endif
+! #ifdef PARALLEL
+!     call co_broadcast(self % weights, 1)
+! #endif
 
     allocate(self % biases(self % output_size))
     self % biases = 0
