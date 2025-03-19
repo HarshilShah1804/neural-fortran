@@ -26,7 +26,9 @@ contains
   pure module subroutine forward(self, input)
     class(flatten_layer), intent(in out) :: self
     real, intent(in) :: input(:,:,:)
-    self % output = pack(input, .true.)
+    logical :: mask(size(input, 1), size(input, 2), size(input, 3))
+    mask = .true.
+    self % output = pack(input, mask)
   end subroutine forward
 
 
