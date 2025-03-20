@@ -1,7 +1,7 @@
-! #ifndef PARALLEL
+! ! #ifndef PARALLEL
 ! #define num_images() 1
 ! #define this_image() 1
-! #endif
+! ! #endif
 
 submodule(nf_parallel) nf_parallel_submodule
   implicit none
@@ -10,21 +10,16 @@ contains
   pure module function tile_indices(dims) result(res)
     integer, intent(in) :: dims
     integer :: res(2)
-    integer :: offset, tile_size
+    integer :: tile_size
 
-    tile_size = dims / num_images()
+    ! No parallel execution, so always assume a single image
+    tile_size = dims
 
-    ! start and end indices assuming equal tile sizes
-    res(1) = (this_image() - 1) * tile_size + 1
-    res(2) = res(1) + tile_size - 1
-
-    ! if we have any remainder, distribute it to the tiles at the end
-    offset = num_images() - mod(dims, num_images())
-    if (this_image() > offset) then
-      res(1) = res(1) + this_image() - offset - 1
-      res(2) = res(2) + this_image() - offset
-    end if
+    ! Start and end indices cover the full range
+    res(1) = 1
+    res(2) = dims
 
   end function tile_indices
 
 end submodule nf_parallel_submodule
+
