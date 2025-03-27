@@ -16,41 +16,41 @@ include(cmake/compilers.cmake)
 # library to archive (libneural-fortran.a)
 add_library(neural-fortran
   src/nf.f90
-  # src/nf/nf_activation.f90
-  # src/nf/nf_base_layer.f90
-  # src/nf/nf_conv2d_layer.f90
-  # src/nf/nf_conv2d_layer_submodule.f90
-  # src/nf/nf_datasets.f90
-  # src/nf/nf_datasets_submodule.f90
-  # src/nf/nf_datasets_mnist.f90
-  # src/nf/nf_datasets_mnist_submodule.f90
-  # src/nf/nf_dense_layer.f90
-  # src/nf/nf_dense_layer_submodule.f90
-  # src/nf/nf_flatten_layer.f90
-  # src/nf/nf_flatten_layer_submodule.f90
-  # src/nf/nf_input1d_layer.f90
-  # src/nf/nf_input1d_layer_submodule.f90
-  # src/nf/nf_input3d_layer.f90
-  # src/nf/nf_input3d_layer_submodule.f90
-  # src/nf/nf_layer_constructors.f90
-  # src/nf/nf_layer_constructors_submodule.f90
-  # src/nf/nf_layer.f90
-  # src/nf/nf_layer_submodule.f90
+  src/nf/nf_activation.f90
+  src/nf/nf_base_layer.f90
+  src/nf/nf_conv2d_layer.f90
+  src/nf/nf_conv2d_layer_submodule.f90
+  src/nf/nf_datasets.f90
+  src/nf/nf_datasets_submodule.f90
+  src/nf/nf_datasets_mnist.f90
+  src/nf/nf_datasets_mnist_submodule.f90
+  src/nf/nf_dense_layer.f90
+  src/nf/nf_dense_layer_submodule.f90
+  src/nf/nf_flatten_layer.f90
+  src/nf/nf_flatten_layer_submodule.f90
+  src/nf/nf_input1d_layer.f90
+  src/nf/nf_input1d_layer_submodule.f90
+  src/nf/nf_input3d_layer.f90
+  src/nf/nf_input3d_layer_submodule.f90
+  src/nf/nf_layer_constructors.f90
+  src/nf/nf_layer_constructors_submodule.f90
+  src/nf/nf_layer.f90
+  src/nf/nf_layer_submodule.f90
   src/nf/nf_loss.f90
   src/nf/nf_loss_submodule.f90
-  # src/nf/nf_maxpool2d_layer.f90
-  # src/nf/nf_maxpool2d_layer_submodule.f90
+  src/nf/nf_maxpool2d_layer.f90
+  src/nf/nf_maxpool2d_layer_submodule.f90
   src/nf/nf_metrics.f90
-  # src/nf/nf_network.f90
-  # src/nf/nf_network_submodule.f90
-  # src/nf/nf_optimizers.f90
-  # src/nf/nf_parallel.f90
-  # src/nf/nf_parallel_submodule.f90
-  # src/nf/nf_random.f90
-  # src/nf/nf_reshape_layer.f90
-  # src/nf/nf_reshape_layer_submodule.f90
-  # src/nf/io/nf_io_binary.f90
-  # src/nf/io/nf_io_binary_submodule.f90
+  src/nf/nf_network.f90
+  src/nf/nf_network_submodule.f90
+  src/nf/nf_optimizers.f90
+  src/nf/nf_parallel.f90
+  src/nf/nf_parallel_submodule.f90
+  src/nf/nf_random.f90
+  src/nf/nf_reshape_layer.f90
+  src/nf/nf_reshape_layer_submodule.f90
+  src/nf/io/nf_io_binary.f90
+  src/nf/io/nf_io_binary_submodule.f90
 )
 
 target_link_libraries(neural-fortran PRIVATE)
@@ -72,7 +72,7 @@ if(${PROJECT_NAME}_BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-# if(${PROJECT_NAME}_BUILD_EXAMPLES)
-#   message(STATUS "Building examples")
-#   add_subdirectory(example)
-# endif()
+if(${PROJECT_NAME}_BUILD_EXAMPLES)
+  message(STATUS "Building examples")
+  add_subdirectory(example)
+endif()
