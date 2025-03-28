@@ -1,85 +1,18 @@
 submodule(nf_layer_constructors) nf_layer_constructors_submodule
 
   use nf_layer, only: layer
-  use nf_conv2d_layer, only: conv2d_layer
-  use nf_dense_layer, only: dense_layer
-  use nf_flatten_layer, only: flatten_layer
-  use nf_input1d_layer, only: input1d_layer
+  ! use nf_conv2d_layer, only: conv2d_layer
+  ! use nf_dense_layer, only: dense_layer
+  ! use nf_flatten_layer, only: flatten_layer
+  ! use nf_input1d_layer, only: input1d_layer
   use nf_input3d_layer, only: input3d_layer
   use nf_maxpool2d_layer, only: maxpool2d_layer
-  use nf_reshape_layer, only: reshape3d_layer
-  use nf_activation, only: activation_function, relu, sigmoid
+  ! use nf_reshape_layer, only: reshape3d_layer
+  ! use nf_activation, only: activation_function, relu, sigmoid
 
   implicit none
 
 contains
-
-  module function conv2d(filters, kernel_size, activation) result(res)
-    integer, intent(in) :: filters
-    integer, intent(in) :: kernel_size
-    class(activation_function), intent(in), optional :: activation
-    type(layer) :: res
-
-    class(activation_function), allocatable :: activation_tmp
-
-    res % name = 'conv2d'
-
-    if (present(activation)) then
-      allocate(activation_tmp, source=activation)
-    else
-      allocate(activation_tmp, source=relu())
-    end if
-
-    res % activation = activation_tmp % get_name()
-
-    allocate( &
-      res % p, &
-      source=conv2d_layer(filters, kernel_size, activation_tmp) &
-    )
-
-  end function conv2d
-
-
-  module function dense(layer_size, activation) result(res)
-    integer, intent(in) :: layer_size
-    class(activation_function), intent(in), optional :: activation
-    type(layer) :: res
-
-    class(activation_function), allocatable :: activation_tmp
-
-    res % name = 'dense'
-    res % layer_shape = [layer_size]
-
-    if (present(activation)) then
-      allocate(activation_tmp, source=activation)
-    else
-      allocate(activation_tmp, source=sigmoid())
-    end if
-
-    res % activation = activation_tmp % get_name()
-
-    allocate(res % p, source=dense_layer(layer_size, activation_tmp))
-
-  end function dense
-
-
-  module function flatten() result(res)
-    type(layer) :: res
-    res % name = 'flatten'
-    allocate(res % p, source=flatten_layer())
-  end function flatten
-
-
-  module function input1d(layer_size) result(res)
-    integer, intent(in) :: layer_size
-    type(layer) :: res
-    res % name = 'input'
-    res % layer_shape = [layer_size]
-    res % input_layer_shape = [integer ::]
-    allocate(res % p, source=input1d_layer(layer_size))
-    res % initialized = .true.
-  end function input1d
-
 
   module function input3d(layer_shape) result(res)
     integer, intent(in) :: layer_shape(3)
@@ -118,20 +51,5 @@ contains
     )
 
   end function maxpool2d
-
-  module function reshape(output_shape) result(res)
-    integer, intent(in) :: output_shape(:)
-    type(layer) :: res
-
-    res % name = 'reshape'
-    res % layer_shape = output_shape
-
-    if (size(output_shape) == 3) then
-      allocate(res % p, source=reshape3d_layer(output_shape))
-    else
-      error stop 'size(output_shape) of the reshape layer must == 3'
-    end if
-
-  end function reshape
 
 end submodule nf_layer_constructors_submodule
