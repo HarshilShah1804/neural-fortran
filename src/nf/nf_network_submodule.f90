@@ -1,154 +1,18 @@
 submodule(nf_network) nf_network_submodule
 
-  use nf_conv2d_layer, only: conv2d_layer
-  use nf_dense_layer, only: dense_layer
-  use nf_flatten_layer, only: flatten_layer
   use nf_input1d_layer, only: input1d_layer
   use nf_input3d_layer, only: input3d_layer
-  use nf_maxpool2d_layer, only: maxpool2d_layer
   use nf_reshape_layer, only: reshape3d_layer
   use nf_layer, only: layer
-  use nf_layer_constructors, only: conv2d, dense, flatten, input, maxpool2d, reshape
+  use nf_layer_constructors, only:  input, reshape
   use nf_loss, only: quadratic
-  use nf_optimizers, only: optimizer_base_type, sgd
   use nf_parallel, only: tile_indices
-  use nf_activation, only: activation_function, &
-                           elu, &
-                           exponential, &
-                           gaussian, &
-                           linear, &
-                           relu, &
-                           leaky_relu, &
-                           sigmoid, &
-                           softmax, &
-                           softplus, &
-                           step, &
-                           tanhf, &
-                           celu
+  use nf_optimizers, only: optimizer_base_type, sgd
+
 
   implicit none
 
 contains
-
-  module function network_from_layers(layers) result(res)
-    type(layer), intent(in) :: layers(:)
-    type(network) :: res
-    integer :: n
-
-    ! Error handling
-
-    ! There must be at least two layers
-    if (size(layers) < 2) &
-      error stop 'Error: A network must have at least 2 layers.'
-
-    ! The first layer must be an input layer
-    if (.not. layers(1) % name == 'input') &
-      error stop 'Error: First layer in the network must be an input layer.'
-
-    !TODO Ensure that the layers are in allowed sequence:
-    !TODO   input1d -> dense
-    !TODO   dense -> dense
-    !TODO   input3d -> conv2d, maxpool2d, flatten
-    !TODO   conv2d -> conv2d, maxpool2d, flatten
-    !TODO   maxpool2d -> conv2d, maxpool2d, flatten
-    !TODO   flatten -> dense
-    !TODO   reshape -> conv2d, maxpool2d
-
-    res % layers = layers
-
-    ! If connecting a 3-d output layer to a 1-d input layer without a flatten
-    ! layer in between, insert a flatten layer.
-    n = 2
-    do while (n <= size(res % layers))
-      select type(this_layer => res % layers(n) % p)
-        type is(dense_layer)
-          select type(prev_layer => res % layers(n-1) % p)
-            type is(input3d_layer)
-              res % layers = [res % layers(:n-1), flatten(), res % layers(n:)]
-              n = n + 1
-            type is(conv2d_layer)
-              res % layers = [res % layers(:n-1), flatten(), res % layers(n:)]
-              n = n + 1
-            type is(maxpool2d_layer)
-              res % layers = [res % layers(:n-1), flatten(), res % layers(n:)]
-              n = n + 1
-            type is(reshape3d_layer)
-              res % layers = [res % layers(:n-1), flatten(), res % layers(n:)]
-              n = n + 1
-            class default
-              n = n + 1
-          end select
-        class default
-          n = n + 1
-      end select
-    end do
-
-    ! Loop over each layer in order and call the init methods.
-    ! This will allocate the data internal to each layer (e.g. weights, biases)
-    ! according to the size of the previous layer.
-    do n = 2, size(res % layers)
-      call res % layers(n) % init(res % layers(n - 1))
-    end do
-
-  end function network_from_layers
-
-
-  module subroutine backward(self, output, loss)
-    class(network), intent(in out) :: self
-    real, intent(in) :: output(:)
-    class(loss_type), intent(in), optional :: loss
-    integer :: n, num_layers
-
-    ! Passing the loss instance is optional. If not provided, and if the
-    ! loss instance has not already been set, we default to the default quadratic. The
-    ! instantiation and initialization below of the loss instance is normally done
-    ! at the beginning of the network % train() method. However, if the user
-    ! wants to call network % backward() directly, for example if they use their
-    ! own custom mini-batching routine, we initialize the loss instance here as
-    ! well. If it's initialized already, this step is a cheap no-op.
-    if (.not. allocated(self % loss)) then
-      if (present(loss)) then
-        self % loss = loss
-      else
-        self % loss = quadratic()
-      end if
-    end if
-
-    num_layers = size(self % layers)
-
-    ! Iterate backward over layers, from the output layer
-    ! to the first non-input layer
-    do n = num_layers, 2, -1
-
-      if (n == num_layers) then
-        ! Output layer; apply the loss function
-        select type(this_layer => self % layers(n) % p)
-          type is(dense_layer)
-            call self % layers(n) % backward( &
-              self % layers(n - 1), &
-              self % loss % derivative(output, this_layer % output) &
-            )
-        end select
-      else
-        ! Hidden layer; take the gradient from the next layer
-        select type(next_layer => self % layers(n + 1) % p)
-          type is(dense_layer)
-            call self % layers(n) % backward(self % layers(n - 1), next_layer % gradient)
-          type is(conv2d_layer)
-            call self % layers(n) % backward(self % layers(n - 1), next_layer % gradient)
-          type is(flatten_layer)
-            call self % layers(n) % backward(self % layers(n - 1), next_layer % gradient)
-          type is(maxpool2d_layer)
-            call self % layers(n) % backward(self % layers(n - 1), next_layer % gradient)
-          type is(reshape3d_layer)
-            call self % layers(n) % backward(self % layers(n - 1), next_layer % gradient)
-        end select
-      end if
-
-    end do
-
-  end subroutine backward
-
 
   module function evaluate_batch_1d(self, input_data, output_data, metric) result(res)
     class(network), intent(in out) :: self
@@ -160,7 +24,7 @@ contains
     integer :: i, n
     real, allocatable :: output(:,:)
 
-    output = self % predict(input_data)
+    ! output = self % predict(input_data)
 
     n = 1
     if (present(metric)) n = n + 1
@@ -212,117 +76,6 @@ contains
     end do
 
   end subroutine forward_3d
-
-
-  module function predict_1d(self, input) result(res)
-    class(network), intent(in out) :: self
-    real, intent(in) :: input(:)
-    real, allocatable :: res(:)
-    integer :: num_layers
-
-    num_layers = size(self % layers)
-
-    call self % forward(input)
-
-    select type(output_layer => self % layers(num_layers) % p)
-      type is(dense_layer)
-        res = output_layer % output
-      type is(flatten_layer)
-        res = output_layer % output
-      class default
-        error stop 'network % output not implemented for this output layer'
-    end select
-
-  end function predict_1d
-
-
-  module function predict_3d(self, input) result(res)
-    class(network), intent(in out) :: self
-    real, intent(in) :: input(:,:,:)
-    real, allocatable :: res(:)
-    integer :: num_layers
-
-    num_layers = size(self % layers)
-
-    call self % forward(input)
-
-    select type(output_layer => self % layers(num_layers) % p)
-      type is(conv2d_layer)
-        !FIXME flatten the result for now; find a better solution
-        res = pack(output_layer % output, .true.)
-      type is(dense_layer)
-        res = output_layer % output
-      type is(flatten_layer)
-        res = output_layer % output
-      class default
-        error stop 'network % output not implemented for this output layer'
-    end select
-
-  end function predict_3d
-
-
-  module function predict_batch_1d(self, input) result(res)
-    class(network), intent(in out) :: self
-    real, intent(in) :: input(:,:)
-    real, allocatable :: res(:,:)
-    integer :: i, batch_size, num_layers, output_size
-
-    num_layers = size(self % layers)
-    batch_size = size(input, dim=rank(input))
-    output_size = product(self % layers(num_layers) % layer_shape)
-
-    allocate(res(output_size, batch_size))
-
-    batch: do i = 1, size(res, dim=2)
-
-      call self % forward(input(:,i))
-
-      select type(output_layer => self % layers(num_layers) % p)
-        type is(dense_layer)
-          res(:,i) = output_layer % output
-        type is(flatten_layer)
-          res(:,i) = output_layer % output
-        class default
-          error stop 'network % output not implemented for this output layer'
-      end select
-
-    end do batch
-
-  end function predict_batch_1d
-
-
-  module function predict_batch_3d(self, input) result(res)
-    class(network), intent(in out) :: self
-    real, intent(in) :: input(:,:,:,:)
-    real, allocatable :: res(:,:)
-    integer :: i, batch_size, num_layers, output_size
-
-    num_layers = size(self % layers)
-    batch_size = size(input, dim=rank(input))
-    output_size = product(self % layers(num_layers) % layer_shape)
-
-    allocate(res(output_size, batch_size))
-
-    batch: do i = 1, batch_size
-
-      call self % forward(input(:,:,:,i))
-
-      select type(output_layer => self % layers(num_layers) % p)
-        type is(conv2d_layer)
-          !FIXME flatten the result for now; find a better solution
-          res(:,i) = pack(output_layer % output, .true.)
-        type is(dense_layer)
-          res(:,i) = output_layer % output
-        type is(flatten_layer)
-          res(:,i) = output_layer % output
-        class default
-          error stop 'network % output not implemented for this output layer'
-      end select
-
-    end do batch
-
-  end function predict_batch_3d
-
 
   module subroutine print_info(self)
     class(network), intent(in) :: self
@@ -455,77 +208,14 @@ contains
 
         do j = istart, iend
           call self % forward(input_data(:,j))
-          call self % backward(output_data(:,j))
+          ! call self % backward(output_data(:,j))
         end do
 
-        call self % update(batch_size=batch_size)
+        ! call self % update(batch_size=batch_size)
 
       end do batch_loop
     end do epoch_loop
 
   end subroutine train
-
-
-  module subroutine update(self, optimizer, batch_size)
-    class(network), intent(in out) :: self
-    class(optimizer_base_type), intent(in), optional :: optimizer
-    integer, intent(in), optional :: batch_size
-    integer :: batch_size_
-    real, allocatable :: params(:)
-    integer :: n
-
-    ! Passing the optimizer instance is optional. If not provided, and if the
-    ! optimizer has not already been set, we default to the default SGD. The
-    ! instantiation and initialization below of the optimizer is normally done
-    ! at the beginning of the network % train() method. However, if the user
-    ! wants to call network % update() directly, for example if they use their
-    ! own custom mini-batching routine, we initialize the optimizer here as
-    ! well. If it's initialized already, this step is a cheap no-op.
-    if (.not. allocated(self % optimizer)) then
-      if (present(optimizer)) then
-        self % optimizer = optimizer
-      else
-        self % optimizer = sgd()
-      end if
-      call self % optimizer % init(self % get_num_params())
-    end if
-
-    if (present(batch_size)) then
-      batch_size_ = batch_size
-    else
-      batch_size_ = 1
-    end if
-
-! #ifdef PARALLEL
-!     ! Sum weight and bias gradients across images, if any
-!     do n = 2, size(self % layers)
-!       select type(this_layer => self % layers(n) % p)
-!         type is(dense_layer)
-!           call co_sum(this_layer % dw)
-!           call co_sum(this_layer % db)
-!         type is(conv2d_layer)
-!           call co_sum(this_layer % dw)
-!           call co_sum(this_layer % db)
-!       end select
-!     end do
-! #endif
-
-    params = self % get_params()
-    call self % optimizer % minimize(params, self % get_gradients() / batch_size_)
-    call self % set_params(params)
-
-    ! Flush network gradients to zero.
-    do n = 2, size(self % layers)
-      select type(this_layer => self % layers(n) % p)
-        type is(dense_layer)
-          this_layer % dw = 0
-          this_layer % db = 0
-        type is(conv2d_layer)
-          this_layer % dw = 0
-          this_layer % db = 0
-      end select
-    end do
-
-  end subroutine update
 
 end submodule nf_network_submodule

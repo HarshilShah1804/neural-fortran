@@ -4,7 +4,6 @@ module nf_layer
   !! user-facing API.
 
   use nf_base_layer, only: base_layer
-  use nf_optimizers, only: optimizer_base_type
 
   implicit none
 
@@ -30,49 +29,15 @@ module nf_layer
     procedure :: get_params
     procedure :: get_gradients
     procedure :: set_params
-    procedure :: init
     procedure :: print_info
 
     ! Specific subroutines for different array ranks
-    procedure, private :: backward_1d
-    procedure, private :: backward_3d
-    procedure, private :: get_output_1d
+
     procedure, private :: get_output_3d
 
-    generic :: backward => backward_1d, backward_3d
-    generic :: get_output => get_output_1d, get_output_3d
+    generic :: get_output =>  get_output_3d
 
   end type layer
-
-  interface backward
-
-    pure module subroutine backward_1d(self, previous, gradient)
-      !! Apply a backward pass on the layer.
-      !! This changes the internal state of the layer.
-      !! This is normally called internally by the `network % backward`
-      !! method.
-      class(layer), intent(in out) :: self
-        !! Layer instance
-      class(layer), intent(in) :: previous
-        !! Previous layer instance
-      real, intent(in) :: gradient(:)
-        !! Array of gradient values from the next layer
-    end subroutine backward_1d
-
-    pure module subroutine backward_3d(self, previous, gradient)
-      !! Apply a backward pass on the layer.
-      !! This changes the internal state of the layer.
-      !! This is normally called internally by the `network % backward`
-      !! method.
-      class(layer), intent(in out) :: self
-        !! Layer instance
-      class(layer), intent(in) :: previous
-        !! Previous layer instance
-      real, intent(in) :: gradient(:,:,:)
-        !! Array of gradient values from the next layer
-    end subroutine backward_3d
-
-  end interface backward
 
   interface
 
@@ -87,14 +52,6 @@ module nf_layer
         !! Input layer instance
     end subroutine forward
 
-    pure module subroutine get_output_1d(self, output)
-      !! Returns the output values (activations) from this layer.
-      class(layer), intent(in) :: self
-        !! Layer instance
-      real, allocatable, intent(out) :: output(:)
-        !! Output values from this layer
-    end subroutine get_output_1d
-
     pure module subroutine get_output_3d(self, output)
       !! Returns the output values (activations) from a layer with a 3-d output
       !! (e.g. input3d, conv2d)
@@ -103,15 +60,6 @@ module nf_layer
       real, allocatable, intent(out) :: output(:,:,:)
         !! Output values from this layer
     end subroutine get_output_3d
-
-    impure elemental module subroutine init(self, input)
-      !! Initialize the layer, using information from the input layer,
-      !! i.e. the layer that precedes this one.
-      class(layer), intent(in out) :: self
-        !! Layer instance
-      class(layer), intent(in) :: input
-        !! Input layer instance
-    end subroutine init
 
     impure elemental module subroutine print_info(self)
       !! Prints a summary information about this layer to the screen.

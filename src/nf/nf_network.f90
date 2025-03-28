@@ -20,39 +20,23 @@ module nf_network
 
   contains
 
-    procedure :: backward
     procedure :: get_gradients
     procedure :: get_num_params
     procedure :: get_params
     procedure :: print_info
     procedure :: set_params
     procedure :: train
-    procedure :: update
 
     procedure, private :: evaluate_batch_1d
     procedure, private :: forward_1d
     procedure, private :: forward_3d
-    procedure, private :: predict_1d
-    procedure, private :: predict_3d
-    procedure, private :: predict_batch_1d
-    procedure, private :: predict_batch_3d
 
     generic :: evaluate => evaluate_batch_1d
     generic :: forward => forward_1d, forward_3d
-    generic :: predict => predict_1d, predict_3d, predict_batch_1d, predict_batch_3d
 
   end type network
 
   interface network
-
-    module function network_from_layers(layers) result(res)
-      !! Create a new `network` instance from an array of `layer` instances.
-      type(layer), intent(in) :: layers(:)
-        !! Input array of `layer` instances;
-        !! the first element must be an input layer.
-      type(network) :: res
-        !! An instance of the `network` type
-    end function network_from_layers
 
     module function network_from_keras(filename) result(res)
       !! Create a new `network` instance
@@ -107,65 +91,8 @@ module nf_network
 
   end interface forward
 
-  interface output
-
-    module function predict_1d(self, input) result(res)
-      !! Return the output of the network given the input 1-d array.
-      class(network), intent(in out) :: self
-        !! Network instance
-      real, intent(in) :: input(:)
-        !! Input data
-      real, allocatable :: res(:)
-        !! Output of the network
-    end function predict_1d
-
-    module function predict_3d(self, input) result(res)
-      !! Return the output of the network given the input 3-d array.
-      class(network), intent(in out) :: self
-        !! Network instance
-      real, intent(in) :: input(:,:,:)
-        !! Input data
-      real, allocatable :: res(:)
-        !! Output of the network
-    end function predict_3d
-
-    module function predict_batch_1d(self, input) result(res)
-      !! Return the output of the network given an input batch of 3-d data.
-      class(network), intent(in out) :: self
-        !! Network instance
-      real, intent(in) :: input(:,:)
-        !! Input data; the last dimension is the batch
-      real, allocatable :: res(:,:)
-        !! Output of the network; the last dimension is the batch
-    end function predict_batch_1d
-
-    module function predict_batch_3d(self, input) result(res)
-      !! Return the output of the network given an input batch of 3-d data.
-      class(network), intent(in out) :: self
-        !! Network instance
-      real, intent(in) :: input(:,:,:,:)
-        !! Input data; the last dimension is the batch
-      real, allocatable :: res(:,:)
-        !! Output of the network; the last dimension is the batch
-    end function predict_batch_3d
-
-  end interface output
-
+    
   interface
-
-    module subroutine backward(self, output, loss)
-      !! Apply one backward pass through the network.
-      !! This changes the state of layers on the network.
-      !! Typically used only internally from the `train` method,
-      !! but can be invoked by the user when creating custom optimizers.
-      class(network), intent(in out) :: self
-        !! Network instance
-      real, intent(in) :: output(:)
-        !! Output data
-      class(loss_type), intent(in), optional :: loss
-        !! Loss instance to use. If not provided, the default is quadratic().
-    end subroutine backward
-
     module integer function get_num_params(self)
       !! Get the number of parameters in the network.
       class(network), intent(in) :: self
@@ -225,22 +152,6 @@ module nf_network
         !! Loss instance to use. If not provided, the default is quadratic().
     end subroutine train
 
-    module subroutine update(self, optimizer, batch_size)
-      !! Update the weights and biases on all layers using the stored
-      !! gradients (from backward passes) on those layers, and flush those
-      !! same stored gradients to zero.
-      !! This changes the state of layers on the network.
-      !! Typically used only internally from the `train` method,
-      !! but can be invoked by the user when creating custom optimizers.
-      class(network), intent(in out) :: self
-        !! Network instance
-      class(optimizer_base_type), intent(in), optional :: optimizer
-        !! Optimizer instance to use
-      integer, intent(in), optional :: batch_size
-        !! Batch size to use.
-        !! Set to 1 for a pure stochastic gradient descent (default).
-        !! Set to `size(input_data, dim=2)` for a batch gradient descent.
-    end subroutine update
 
   end interface
 
