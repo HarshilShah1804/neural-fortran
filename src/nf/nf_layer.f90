@@ -4,7 +4,7 @@ module nf_layer
   !! user-facing API.
 
   use nf_base_layer, only: base_layer
-  use nf_optimizers, only: optimizer_base_type
+  ! use nf_optimizers, only: optimizer_base_type
 
   implicit none
 
