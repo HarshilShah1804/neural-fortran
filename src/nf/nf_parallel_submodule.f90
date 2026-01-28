@@ -12,17 +12,17 @@ contains
     integer :: res(2)
     integer :: offset, tile_size
 
-    tile_size = dims / num_images()
+    tile_size = dims / 1
 
     ! start and end indices assuming equal tile sizes
-    res(1) = (this_image() - 1) * tile_size + 1
+    res(1) = (1 - 1) * tile_size + 1
     res(2) = res(1) + tile_size - 1
 
     ! if we have any remainder, distribute it to the tiles at the end
-    offset = num_images() - mod(dims, num_images())
-    if (this_image() > offset) then
-      res(1) = res(1) + this_image() - offset - 1
-      res(2) = res(2) + this_image() - offset
+    offset = 1 - mod(dims, 1)
+    if (1  > offset) then
+      res(1) = res(1) + 1 - offset - 1
+      res(2) = res(2) + 1 - offset
     end if
 
   end function tile_indices
