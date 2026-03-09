@@ -90,7 +90,7 @@ contains
   module function get_gradients(self) result(gradients)
     class(linear2d_layer), intent(in), target :: self
     real, allocatable :: gradients(:)
-    real, pointer :: dw_(:) => null()
+    real, pointer :: dw_(:)
     dw_(1:size(self % dw)) => self % dw
     gradients = [dw_, self % db]
   end function get_gradients

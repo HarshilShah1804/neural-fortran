@@ -100,7 +100,7 @@ contains
   module function get_params(self) result(params)
     class(embedding_layer), intent(in), target :: self
     real, allocatable :: params(:)
-    real, pointer :: w_(:) => null()
+    real, pointer :: w_(:)
 
     w_(1: product(shape(self % weights))) => self % weights
     params = w_
@@ -109,7 +109,7 @@ contains
   module function get_gradients(self) result(gradients)
     class(embedding_layer), intent(in), target :: self
     real, allocatable :: gradients(:)
-    real, pointer :: dw_(:) => null()
+    real, pointer :: dw_(:)
 
     dw_(1: product(shape(self % dw))) => self % dw
     gradients = dw_
@@ -119,7 +119,7 @@ contains
     class(embedding_layer), intent(in out) :: self
     real, intent(in), target :: params(:)
 
-    real, pointer :: p_(:,:) => null()
+    real, pointer :: p_(:,:)
 
     ! check if the number of parameters is correct
     if (size(params) /= self % get_num_params()) then
